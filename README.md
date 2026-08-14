@@ -166,6 +166,9 @@ cp ./lan-gate.mjs "$DSH_DIR/lan-gate/lan-gate.mjs"
 - DeepSeek Harness（run-from-source 的 web profile）
 - Node ≥ 18（仅使用内置模块）
 - 现代浏览器（Chrome / Safari / Firefox / 微信内置浏览器）
+## 插件有问题欢迎联系我
+QQ:3405822503
+(请备注好)
 
 ## License
 
