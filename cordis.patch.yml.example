@@ -1,0 +1,8 @@
+# Your patch layer for this dsh profile, applied after every bundle layer:
+# a top-level YAML array of loader patch entries (id-targeted config
+# overrides, disables, and insert lists; `!!js` expressions allowed).
+- insert:
+    - id: lan-gate
+      # Windows: use file:/// form, e.g. 'file:///D:/deepseek-harness-master/.dsh/lan-gate/lan-gate.mjs'
+      # macOS/Linux: 'file:///home/user/.dsh/lan-gate/lan-gate.mjs'
+      name: 'file:///D:/deepseek-harness-master/.dsh/lan-gate/lan-gate.mjs'
