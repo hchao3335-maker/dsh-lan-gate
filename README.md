@@ -34,7 +34,7 @@
 > - 本仓库不再更新，不接收 issue / PR，也不会有功能更新或安全修复。
 > - 新项目覆盖**局域网 + 公网**两种场景：四种登录组合（密码 / TOTP / 邮箱验证码）、暴破锁定、HTTPS 反向代理、dsh 设置页内的配置面板；同样是进程内插件、零依赖。
 > - **迁移**：先按新项目文档完成安装，再 `dsh plugin --profile web remove dsh-lan-gate`，删掉 `cordis.patch.yml` 里对应的行，最后重启 dsh。
-> - 下文文档仅作历史参考保留，不再保证与当前 DSH 版本兼容。
+> - 已适配 **dsh 0.2.x**（run-from-source 与桌面版 web profile），文档里的安装/配置步骤可用；但本项目不再接受新功能，仅保持可用。
 >
 > **Deprecated — superseded by [dsh-public-gate](https://github.com/hchao3335-maker/dsh-public-gate). No further updates or security fixes.**
 
@@ -52,15 +52,15 @@
 | | 能力 | 说明 |
 | :--: | --- | --- |
 | <img src="assets/icons/monitor.svg" width="18" height="18" alt=""> | **内网访问** | 进程内反向代理 `0.0.0.0:3088 → 127.0.0.1:3080`，局域网设备打开 `http://<电脑IP>:3088` 即可用 |
-| <img src="assets/icons/check.svg" width="18" height="18" alt=""> | **首次访问批准** | 新设备第一次访问看到「等待本机批准」，本机在 **设置 → 内网访问** 点允许后才放行 |
+| <img src="assets/icons/check.svg" width="18" height="18" alt=""> | **首次访问批准** | 新设备第一次访问看到「等待本机批准」，本机在页面右下角「内网访问」浮层点允许后才放行 |
 | <img src="assets/icons/phone.svg" width="18" height="18" alt=""> | **每台设备指定排版** | 自动 / 手机 / 电脑 三种；手机档强制紧凑排版，电脑档即使窗口很窄也保持桌面版 |
-| <img src="assets/icons/panel.svg" width="18" height="18" alt=""> | **本机管理面板** | 注入 DSH 设置页：状态、启停、批准/拒绝、切换排版、撤销、复制访问地址 |
+| <img src="assets/icons/panel.svg" width="18" height="18" alt=""> | **本机管理浮层** | 页面右下角常驻按钮，点开即用：状态、启停、批准/拒绝、切换排版、撤销、复制访问地址；也可直接访问 `/lan-gate/admin` |
 | <img src="assets/icons/package.svg" width="18" height="18" alt=""> | **状态持久化** | 批准记录写入 `$DSH_HOME/lan-gate-state.json`，重启 DSH 后仍有效 |
 | <img src="assets/icons/shield.svg" width="18" height="18" alt=""> | **安全边界** | 管理接口仅放行本机请求；转发时把 Host 重写为回环地址并通过 DSH 的信任栅栏；撤销后已建立的连接数秒内断开 |
 | <img src="assets/icons/key.svg" width="18" height="18" alt=""> | **设备令牌 + Cookie 绑定** | 每次批准签发 32 位随机令牌，设备用一次性认领链接换 `lg_token`（HttpOnly + SameSite），后续请求必须携带匹配 Cookie |
 | <img src="assets/icons/ban.svg" width="18" height="18" alt=""> | **请求限流** | 每来源 IP 每分钟 120 个请求（滑动窗口），超限返回 `429` + `Retry-After` |
 | <img src="assets/icons/sliders.svg" width="18" height="18" alt=""> | **监听地址可配** | 默认 `0.0.0.0`；放在前置代理/隧道后面时可收紧为 `127.0.0.1` |
-| <img src="assets/icons/code.svg" width="18" height="18" alt=""> | **移动端兼容** | 门禁页手机适配、设置面板全屏化、`crypto.randomUUID` polyfill（内网 HTTP 非安全上下文） |
+| <img src="assets/icons/code.svg" width="18" height="18" alt=""> | **移动端兼容** | 门禁页手机适配、浮层在小屏自适应、`crypto.randomUUID` polyfill（内网 HTTP 非安全上下文） |
 
 ---
 
@@ -75,7 +75,7 @@
 | **已批准但无有效 Cookie** | 下发一次性认领链接，换取 `lg_token` Cookie |
 | **已批准且 Cookie 匹配** | 转发（Host 重写 + WebSocket 升级转发） |
 
-插件同时通过 `webServer.tapIndex` 向首页注入：`crypto.randomUUID` polyfill、设备排版 CSS，以及设置界面内的管理面板（原生 JS 实现，仅本机可见）。
+插件通过 `webServer.tapIndex` 向首页注入：`crypto.randomUUID` polyfill、设备排版 CSS，以及右下角「内网访问」浮层（原生 JS、零依赖，仅本机可见）。浮层不依赖 DSH 的界面结构，DSH 改版也不会影响它。
 
 ---
 
@@ -168,7 +168,7 @@ cp ./lan-gate.mjs "$DSH_DIR/lan-gate/lan-gate.mjs"
 | `/lan-gate/status` 打不开或 404 | 插件没加载成功，检查第 2 步配置，重启后看启动日志 |
 | 面板显示「出错：EADDRINUSE」 | 3088 端口被占用：打开 `lan-gate.mjs`，把顶部 `PROXY_PORT = 3088` 改成其它端口（如 `3089`），重启 DSH |
 | 手机打不开 `http://<电脑IP>:3088` | ① 确认手机和电脑在同一网络；② 系统防火墙放行：Windows 管理员 PowerShell 执行 `netsh advfirewall firewall add rule name="DSH LAN" dir=in action=allow protocol=TCP localport=3088` |
-| 设置里看不到「内网访问」 | 面板只在本机显示，内网设备看不到是正常的；本机看不到说明插件未加载（回第 3 步验证） |
+| 右下角看不到「内网访问」按钮 | 浮层只在本机可见，内网设备看不到是正常的；本机也看不到说明插件未加载（回第 3 步验证）。可先直接打开 `http://127.0.0.1:3080/lan-gate/admin` 判断 |
 | 重启后手机又要重新批准 | 批准记录在 `<DSH数据目录>\lan-gate-state.json`，文件被删除或 DSH_HOME 变了才会丢；从旧版（临时插件）升级的用户需重新批准一次 |
 | 手机显示「已绑定到其他浏览器」 | 该设备的令牌已发放给另一个浏览器（例如换浏览器、清了 Cookie、或同 IP 的别的设备抢先认领了）。在本机面板撤销该设备再重新批准，手机会自动重新认领 |
 | 页面出现 429（请求过于频繁） | 该 IP 超过每分钟 120 个请求上限，等一分钟自动恢复；正常使用不会触发（网页应用远比这个频率低） |
@@ -179,10 +179,11 @@ cp ./lan-gate.mjs "$DSH_DIR/lan-gate/lan-gate.mjs"
 <a id="usage"></a>
 ## <img src="assets/icons/monitor.svg" width="20" height="20" alt=""> 使用
 
-1. 打开 DSH 设置（左下角齿轮）→ **内网访问**：面板显示运行状态与全部访问地址（点击可复制）
+1. 在电脑上打开 DSH 页面，点**右下角的「内网访问」按钮**：浮层显示运行状态与全部访问地址（点击可复制）
+   - 不想用浮层时，也可以直接访问 `http://127.0.0.1:3080/lan-gate/admin`
 2. 把地址发给手机（微信/QQ 发给自己即可），手机浏览器打开
-3. 手机显示「等待本机批准」，本机面板的**待批准设备**里选择 自动/手机/电脑 → 点**允许**，手机自动进入 DSH
-4. 随时在面板中切换每台设备的访问方式、撤销、或停止服务
+3. 手机显示「等待本机批准」，在浮层的**待批准设备**里选择 自动/手机/电脑 → 点**允许**，手机自动进入 DSH
+4. 随时在浮层里切换每台设备的访问方式、撤销、或停止服务
 
 ---
 
@@ -226,7 +227,7 @@ cp ./lan-gate.mjs "$DSH_DIR/lan-gate/lan-gate.mjs"
 <a id="compat"></a>
 ## <img src="assets/icons/check.svg" width="20" height="20" alt=""> 兼容性
 
-- DeepSeek Harness（run-from-source 的 web profile）
+- DeepSeek Harness **0.2.x**（run-from-source 的 web profile / 桌面版的 web profile）
 - Node ≥ 18（仅使用内置模块）
 - 现代浏览器（Chrome / Safari / Firefox / 微信内置浏览器）
 

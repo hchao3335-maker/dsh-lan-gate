@@ -4,7 +4,7 @@
 // 安全：设备令牌 + Cookie 绑定（一次批准只绑定一个浏览器，令牌一次性认领）；
 //       每 IP 每分钟限流（默认 120，超限 429）；监听地址可用 LAN_GATE_HOST 收紧为 127.0.0.1；
 //       环境变量 LAN_GATE_PORT / LAN_GATE_HOST 可覆盖端口与监听地址。
-// 管理面板：注入到 DSH「设置」界面（设置 → 内网访问）。
+// 管理面板：页面右下角「内网访问」浮层（不依赖 DSH 界面结构）；也可直接访问 /lan-gate/admin。
 // 落点：.dsh/profiles/web/cordis.patch.yml（DSH 重启后自动加载，进程内运行，无子进程）。
 
 import { networkInterfaces, homedir } from 'node:os'
@@ -163,7 +163,7 @@ function pendingPage(ip) {
     + '<p class="sub">首次访问需要电脑端确认</p>'
     + '<div class="spinner"></div>'
     + '<p>设备</p><span class="ip">' + ip + '</span>'
-    + '<p>请在电脑上的 DSH 界面批准此设备：<br>设置 → 内网访问 → 允许</p>'
+    + '<p>请在电脑的 DSH 页面点右下角「内网访问」，选中本设备后点「允许」。</p>'
     + '<a class="btn" href="javascript:location.reload()">立即检查</a>'
     + '<div class="bar"><i></i></div>'
     + '<script>setTimeout(function(){location.reload()},2500)</script>')
@@ -175,7 +175,7 @@ function deniedPage(ip) {
     + '<h1>访问被拒绝</h1>'
     + '<p class="sub">本机未批准此设备</p>'
     + '<p class="bad">设备 ' + ip + ' 未被允许访问本机的 DSH。</p>'
-    + '<p>如需重新允许，请在本机 DSH 的「设置 → 内网访问」页面操作。</p>'
+    + '<p>如需重新允许，请在电脑的 DSH 页面点右下角「内网访问」操作。</p>'
     + '<a class="btn" href="javascript:location.reload()">重新检查</a>'
     + '<script>setTimeout(function(){location.reload()},4000)</script>')
 }
@@ -186,7 +186,7 @@ function boundPage(ip) {
     + '<h1>此设备的访问令牌已绑定到其他浏览器</h1>'
     + '<p class="sub">出于安全考虑，一次批准只绑定一个浏览器</p>'
     + '<p class="bad">设备 ' + ip + ' 的令牌已发放给其他浏览器。</p>'
-    + '<p>如需在本浏览器使用，请在本机 DSH 的「设置 → 内网访问」中撤销该设备后重新批准。</p>'
+    + '<p>如需在本浏览器使用，请在电脑的 DSH 页面点右下角「内网访问」，撤销该设备后重新批准。</p>'
     + '<a class="btn" href="javascript:location.reload()">重新检查</a>')
 }
 
@@ -351,6 +351,17 @@ const PANEL_CSS = '<style>'
   + '.lg-panel .lg-kind-on{border-color:var(--dsw-alias-brand-primary);color:var(--dsw-alias-brand-primary);background:var(--dsw-alias-bg-layer-2)}'
   + '.lg-panel .lg-error{color:var(--dsw-alias-state-error-primary);font-size:13px;margin:4px 0}'
   + '.lg-nav-holder{flex:1;min-height:0;overflow-y:auto;padding:0 24px 24px}'
+  + '.lg-launcher{position:fixed;right:18px;bottom:18px;z-index:2147483000;display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 14px;border-radius:999px;border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-1,#fff);color:var(--dsw-alias-label-primary);font:500 13px/1 inherit;cursor:pointer;box-shadow:0 6px 18px rgba(0,0,0,.12)}'
+  + '.lg-launcher:hover{background:var(--dsw-alias-bg-layer-2)}'
+  + '.lg-dot{width:7px;height:7px;border-radius:50%;background:var(--dsw-alias-state-success-primary);flex:none}'
+  + '.lg-overlay{position:fixed;inset:0;z-index:2147483001;display:none;align-items:center;justify-content:center;padding:16px;background:rgba(0,0,0,.38)}'
+  + '.lg-overlay-inline{position:static;inset:auto;display:block;padding:0;background:transparent;z-index:auto}'
+  + '.lg-card{width:100%;max-width:520px;max-height:min(78vh,720px);overflow:auto;box-sizing:border-box;padding:16px 18px;border-radius:12px;border:1px solid var(--dsw-alias-border-l1);background:var(--dsw-alias-bg-layer-1,#fff);color:var(--dsw-alias-label-primary);box-shadow:0 18px 48px rgba(0,0,0,.28)}'
+  + '.lg-card-inline{max-width:none;max-height:none;box-shadow:none;border-radius:0;border:0;padding:0;background:transparent}'
+  + '.lg-card-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}'
+  + '.lg-close{width:28px;height:28px;border:0;border-radius:6px;background:transparent;color:inherit;font-size:18px;line-height:1;cursor:pointer}'
+  + '.lg-close:hover{background:var(--dsw-alias-bg-layer-2)}'
+  + '@media (max-width:640px){.lg-card{max-height:86vh}.lg-launcher{right:12px;bottom:12px}}'
   + '</style>'
 
 // 设置界面注入脚本：严格使用单引号；HTML 属性也用单引号，避免转义问题。
@@ -359,7 +370,7 @@ const PANEL_JS = '<scr' + 'ipt>'
   + 'var KIND={auto:\'自动\',phone:\'手机\',desktop:\'电脑\'};'
   + 'var STATE={running:\'运行中\',starting:\'启动中\',stopped:\'已停止\',error:\'出错\'};'
   + 'var pendingKinds={};'
-  + 'var active=false;'
+  + 'var open=false;'
   + 'var timer=null;'
   + 'var optionsNode=null;'
   + 'var panelNode=null;'
@@ -373,7 +384,7 @@ const PANEL_JS = '<scr' + 'ipt>'
   + 'return h}'
   + 'function post(action,ip,kind){'
   + 'fetch(\'/lan-gate/action\',{method:\'POST\',headers:{\'Content-Type\':\'application/json\'},body:JSON.stringify({action:action,ip:ip||null,kind:kind||null})})'
-  + '.then(function(){if(active)refresh()}).catch(function(){})}'
+  + '.then(function(){if(open)refresh()}).catch(function(){})}'
   + 'function refresh(){'
   + 'fetch(\'/lan-gate/status\').then(function(r){return r.json()}).then(render)'
   + '.catch(function(){if(panelNode)panelNode.innerHTML=\'<div class="lg-panel"><div class="lg-error">无法读取状态（插件可能未运行）</div></div>\'})}'
@@ -401,42 +412,15 @@ const PANEL_JS = '<scr' + 'ipt>'
   + 'for(var b=0;b<denied.length;b++){var dn=denied[b];h+=\'<div class="lg-item"><div class="lg-ip">\'+esc(dn.ip)+\'</div><div class="lg-row"><button class="lg-btn lg-btn-primary" data-act="approve" data-ip="\'+esc(dn.ip)+\'">重新允许</button></div></div>\'}}'
   + 'h+=\'<div class="lg-muted">说明：只有已批准设备的请求才会转发到本机 DSH；修改访问方式后该设备刷新页面即生效。</div>\';'
   + 'panelNode.innerHTML=\'<div class="lg-panel">\'+h+\'</div>\'}'
-  + 'function startPoll(){stopPoll();timer=setInterval(function(){if(active)refresh()},2000)}'
+  + 'var launcher=null;var overlay=null;var card=null;'
+  + 'function startPoll(){stopPoll();timer=setInterval(function(){if(open)refresh()},2000)}'
   + 'function stopPoll(){if(timer){clearInterval(timer);timer=null}}'
-  + 'function styleActive(){'
-  + 'var all=document.querySelectorAll(\'.lg-nav-cell\');'
-  + 'for(var i=0;i<all.length;i++){if(all[i]===cell&&active){all[i].classList.add(\'lg-nav-active\')}else{all[i].classList.remove(\'lg-nav-active\')}}'
-  + 'var listNode=cell?cell.parentNode:null;'
-  + 'if(listNode){if(active){listNode.classList.add(\'lg-section-on\')}else{listNode.classList.remove(\'lg-section-on\')}}}'
-  + 'function attach(){'
-  + 'var dialog=document.querySelector(\'[role="dialog"][aria-modal="true"]\');'
-  + 'if(!dialog||dialog.getAttribute(\'data-lg-attached\'))return;'
-  + 'var nav=dialog.querySelector(\'nav\');'
-  + 'if(!nav)return;'
-  + 'var kids=nav.children;'
-  + 'var list=kids.length>1?kids[kids.length-1]:null;'
-  + 'if(!list)return;'
-  + 'var contentNode=dialog.children[dialog.children.length-1];'
-  + 'if(!contentNode)return;'
-  + 'var opts=contentNode.children[contentNode.children.length-1];'
-  + 'if(!opts)return;'
-  + 'dialog.setAttribute(\'data-lg-attached\',\'1\');'
-  + 'fetch(\'/lan-gate/status\').then(function(r){'
-  + 'if(r.status===403)return;'
-  + 'optionsNode=opts;'
-  + 'panelNode=document.createElement(\'div\');'
-  + 'panelNode.className=\'lg-nav-holder\';'
-  + 'panelNode.style.display=\'none\';'
-  + 'contentNode.appendChild(panelNode);'
-  + 'panelNode.addEventListener(\'click\',function(ev){'
-  + 'var el=ev.target;'
-  + 'if(!el||!el.getAttribute)return;'
+  + 'function bindActions(node){node.addEventListener(\'click\',function(ev){'
+  + 'var el=ev.target;if(!el||!el.getAttribute)return;'
   + 'var copy=el.getAttribute(\'data-copy\');'
   + 'if(copy){try{if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(copy)}catch(e){}return}'
-  + 'var act=el.getAttribute(\'data-act\');'
-  + 'if(!act)return;'
-  + 'var ip=el.getAttribute(\'data-ip\');'
-  + 'var kind=el.getAttribute(\'data-kind\');'
+  + 'var act=el.getAttribute(\'data-act\');if(!act)return;'
+  + 'var ip=el.getAttribute(\'data-ip\');var kind=el.getAttribute(\'data-kind\');'
   + 'if(act===\'kind\'){pendingKinds[ip]=kind;refresh();return}'
   + 'if(act===\'approve\'){post(\'approve\',ip,pendingKinds[ip]||\'auto\');return}'
   + 'if(act===\'deny\'){post(\'deny\',ip);return}'
@@ -445,33 +429,35 @@ const PANEL_JS = '<scr' + 'ipt>'
   + 'if(act===\'revoke-all\'){post(\'revoke-all\');return}'
   + 'if(act===\'stop\'){post(\'stop\');return}'
   + 'if(act===\'restart\'){post(\'restart\');return}'
-  + '});'
-  + 'cell=document.createElement(\'button\');'
-  + 'cell.type=\'button\';'
-  + 'cell.className=\'lg-nav-cell\';'
-  + 'cell.setAttribute(\'data-lg-nav\',\'1\');'
-  + 'cell.innerHTML=\'<span class="lg-nav-icon">🌐</span><span>内网访问</span>\';'
-  + 'cell.addEventListener(\'click\',function(ev){'
-  + 'ev.stopPropagation();'
-  + 'active=true;'
-  + 'opts.style.display=\'none\';'
-  + 'if(panelNode)panelNode.style.display=\'block\';'
-  + 'styleActive();'
-  + 'refresh();'
-  + 'startPoll()});'
-  + 'list.appendChild(cell);'
-  + 'list.addEventListener(\'click\',function(ev){'
-  + 'if(!ev.target.closest(\'[data-lg-nav]\')){active=false;stopPoll();opts.style.display=\'\';if(panelNode)panelNode.style.display=\'none\';styleActive()}}'
-  + ',true)}).catch(function(){})}'
-  + 'var mo=new MutationObserver(function(muts){'
-  + 'for(var i=0;i<muts.length;i++){'
-  + 'var nodes=muts[i].addedNodes;'
-  + 'for(var j=0;j<nodes.length;j++){'
-  + 'var n=nodes[j];'
-  + 'if(n.nodeType===1&&(n.matches?n.matches(\'[role="dialog"][aria-modal="true"]\'):false)){attach();return}'
-  + 'if(n.nodeType===1&&n.querySelector&&n.querySelector(\'[role="dialog"][aria-modal="true"]\')){attach();return}}}});'
-  + 'mo.observe(document.body,{childList:true,subtree:true});'
-  + 'attach();'
+  + '})}'
+  + 'function closePanel(){open=false;stopPoll();if(overlay)overlay.style.display=\'none\';if(launcher)launcher.setAttribute(\'aria-expanded\',\'false\')}'
+  + 'function ensureOverlay(){'
+  + 'if(overlay)return;'
+  + 'overlay=document.createElement(\'div\');overlay.className=\'lg-overlay\';'
+  + 'card=document.createElement(\'div\');card.className=\'lg-card\';card.setAttribute(\'role\',\'dialog\');card.setAttribute(\'aria-label\',\'内网访问\');'
+  + 'var head=document.createElement(\'div\');head.className=\'lg-card-head\';'
+  + 'var title=document.createElement(\'strong\');title.textContent=\'内网访问\';'
+  + 'var closeBtn=document.createElement(\'button\');closeBtn.type=\'button\';closeBtn.className=\'lg-close\';closeBtn.textContent=\'×\';closeBtn.setAttribute(\'aria-label\',\'关闭\');closeBtn.addEventListener(\'click\',closePanel);'
+  + 'head.appendChild(title);head.appendChild(closeBtn);'
+  + 'panelNode=document.createElement(\'div\');panelNode.className=\'lg-body\';'
+  + 'bindActions(panelNode);'
+  + 'card.appendChild(head);card.appendChild(panelNode);overlay.appendChild(card);'
+  + 'overlay.addEventListener(\'click\',function(ev){if(ev.target===overlay)closePanel()});'
+  + 'document.addEventListener(\'keydown\',function(ev){if(ev.key===\'Escape\'&&open)closePanel()});'
+  + 'document.body.appendChild(overlay)'
+  + '}'
+  + 'function openPanel(){open=true;ensureOverlay();overlay.style.display=\'flex\';if(launcher)launcher.setAttribute(\'aria-expanded\',\'true\');refresh();startPoll()}'
+  + 'function mount(){'
+  + 'if(document.documentElement.getAttribute(\'data-lg-admin\')===\'1\'){'
+  + 'ensureOverlay();overlay.classList.add(\'lg-overlay-inline\');card.classList.add(\'lg-card-inline\');'
+  + 'open=true;refresh();startPoll();return}'
+  + 'launcher=document.createElement(\'button\');launcher.type=\'button\';launcher.className=\'lg-launcher\';'
+  + 'launcher.setAttribute(\'aria-expanded\',\'false\');launcher.setAttribute(\'aria-label\',\'内网访问\');'
+  + 'launcher.innerHTML=\'<span class="lg-dot"></span><span>内网访问</span>\';'
+  + 'launcher.addEventListener(\'click\',function(){open?closePanel():openPanel()});'
+  + 'document.body.appendChild(launcher)'
+  + '}'
+  + 'if(document.readyState===\'loading\')document.addEventListener(\'DOMContentLoaded\',mount);else mount();'
   + '})()'
   + '</scr' + 'ipt>'
 
@@ -570,6 +556,16 @@ export function apply(ctx) {
   function statusHandler(req, res) {
     if (!isLocalRequest(req)) { json(res, 403, { ok: false, reason: 'forbidden' }); return }
     json(res, 200, buildStatus())
+  }
+
+  function adminPageHandler(req, res) {
+    if (!isLocalRequest(req)) { res.writeHead(403, { 'Content-Type': 'text/plain; charset=utf-8' }); res.end('forbidden'); return }
+    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' })
+    res.end('<!doctype html><html lang="zh-CN" data-lg-admin="1"><head><meta charset="utf-8">'
+      + '<meta name="viewport" content="width=device-width,initial-scale=1"><title>内网访问 · DSH</title>'
+      + PANEL_CSS
+      + '<style>body{margin:0;padding:20px;background:var(--dsw-alias-bg-layer-1,#fff);color:var(--dsw-alias-label-primary,#111);font-family:system-ui,-apple-system,"Segoe UI",sans-serif}</style>'
+      + '</head><body><div id="lg-admin"></div>' + PANEL_JS + '</body></html>')
   }
 
   function actionHandler(req, res) {
@@ -729,6 +725,7 @@ export function apply(ctx) {
 
   ctx.effect(() => webServer.register({ kind: 'exact', path: '/lan-gate/status', handler: statusHandler }), 'lan-gate: status route')
   ctx.effect(() => webServer.register({ kind: 'exact', path: '/lan-gate/action', handler: actionHandler }), 'lan-gate: action route')
+  ctx.effect(() => webServer.register({ kind: 'exact', path: '/lan-gate/admin', handler: adminPageHandler }), 'lan-gate: admin page route')
   ctx.effect(() => webServer.tapIndex(injectPanel), 'lan-gate: index injection')
 
   const sweep = setInterval(() => {
