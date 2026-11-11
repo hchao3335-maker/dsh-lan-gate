@@ -104,7 +104,7 @@ echo "${DSH_HOME:-$HOME/.dsh}"
 **Windows（PowerShell）**（把下面第一行换成你实际的 DSH 数据目录）：
 
 ```powershell
-$dsh = "D:\deepseek-harness-master\.dsh"
+$dsh = "C:\Users\你的用户名\.dsh"
 New-Item -ItemType Directory -Force -Path "$dsh\lan-gate" | Out-Null
 Copy-Item ".\lan-gate.mjs" "$dsh\lan-gate\lan-gate.mjs" -Force
 ```
@@ -130,14 +130,14 @@ cp ./lan-gate.mjs "$DSH_DIR/lan-gate/lan-gate.mjs"
 ```yaml
 - insert:
     - id: lan-gate
-      name: 'file:///D:/deepseek-harness-master/.dsh/lan-gate/lan-gate.mjs'
+      name: 'file:///C:/Users/你的用户名/.dsh/lan-gate/lan-gate.mjs'
 ```
 
 **把 `name:` 里的路径换成你第 1 步实际放置的完整路径**，规则如下：
 
 | 系统 | 写法 | 例子 |
 |---|---|---|
-| Windows | `file:///盘符:/完整路径` | `file:///D:/deepseek-harness-master/.dsh/lan-gate/lan-gate.mjs` |
+| Windows | `file:///盘符:/完整路径` | `file:///C:/Users/你的用户名/.dsh/lan-gate/lan-gate.mjs` |
 | macOS / Linux | `file:///完整路径` | `file:///home/me/.dsh/lan-gate/lan-gate.mjs` |
 
 > **最容易踩的坑（Windows）**：必须写 `file:///D:/...`，不能写 `D:/...`。DSH 的插件加载器不会自动把 Windows 路径转成 URL，裸写会报错 `ERR_UNSUPPORTED_ESM_URL_SCHEME`。
