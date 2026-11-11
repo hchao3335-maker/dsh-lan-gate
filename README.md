@@ -1,5 +1,17 @@
 # DSH 内网访问网关（dsh-lan-gate）
 
+> [!WARNING]
+> ## ⚠️ 本项目已停止维护
+>
+> **请改用新项目：[dsh-public-gate](https://github.com/hchao3335-maker/dsh-public-gate)**
+>
+> - 本仓库**不再更新**，不接收 issue / PR，也不会有功能更新或安全修复。
+> - 新项目是面向**公网访问**的强化版：密码 / TOTP / 邮箱验证码多种登录组合、暴破锁定、HTTPS 反向代理，以及 dsh 设置页内的配置面板；同样是进程内插件、零依赖。
+> - 已部署本插件的用户：请先按 `dsh-public-gate` 的文档完成安装，再从 dsh profile 移除本插件（`dsh plugin --profile web remove dsh-lan-gate`，并删掉 `cordis.patch.yml` 里对应的行），最后重启 dsh。
+> - 下文文档仅作为历史参考保留，不再保证与当前 DSH 版本兼容。
+>
+> **Deprecated — superseded by [dsh-public-gate](https://github.com/hchao3335-maker/dsh-public-gate). No further updates or security fixes.**
+
 让同一局域网内的手机、平板、其他电脑通过网页访问本机 [DeepSeek Harness](https://github.com/deepseek-ai/DeepSeek-Harness)（DSH），并且**首次访问需要本机批准**。
 
 一个自包含的单文件插件（`lan-gate.mjs`），进程内反向代理 + 首页注入，无外部依赖、无子进程。
