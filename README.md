@@ -14,6 +14,7 @@
   <a href="https://github.com/hchao3335-maker/dsh-public-gate"><img alt="Successor: dsh-public-gate" src="https://img.shields.io/badge/successor-dsh--public--gate-4f7cff"></a>
   <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-14b8a6.svg"></a>
   <img alt="Node" src="https://img.shields.io/badge/node-%E2%89%A5%2018-339933?logo=node.js&amp;logoColor=white">
+  <img alt="dsh" src="https://img.shields.io/badge/dsh-0.2.2--rc.1-14b8a6">
   <img alt="dependencies" src="https://img.shields.io/badge/dependencies-0-brightgreen">
   <a href="https://github.com/hchao3335-maker/dsh-lan-gate/stargazers"><img alt="Stars" src="https://img.shields.io/github/stars/hchao3335-maker/dsh-lan-gate?style=social"></a>
   <a href="https://github.com/hchao3335-maker/dsh-lan-gate/commits/main"><img alt="Last commit" src="https://img.shields.io/github/last-commit/hchao3335-maker/dsh-lan-gate"></a>
@@ -227,9 +228,26 @@ cp ./lan-gate.mjs "$DSH_DIR/lan-gate/lan-gate.mjs"
 <a id="compat"></a>
 ## <img src="assets/icons/check.svg" width="20" height="20" alt=""> 兼容性
 
-- DeepSeek Harness **0.2.x**（run-from-source 的 web profile / 桌面版的 web profile）
-- Node ≥ 18（仅使用内置模块）
-- 现代浏览器（Chrome / Safari / Firefox / 微信内置浏览器）
+| 项 | 值 |
+| --- | --- |
+| **实测版本** | `@deepseek-ai/dsh` **0.2.2-rc.1**（Node 24） |
+| **声明支持** | **dsh 0.2.x** |
+| 不兼容 | dsh **0.1.x**（v1.2.0 起管理面板不再依赖 0.1.x 的设置页结构） |
+| 未验证 | dsh 0.3 及以上 |
+| 运行形态 | run-from-source 的 web profile；桌面版的 web profile 同样可用 |
+| Node | ≥ 18（仅使用内置模块，实测 24） |
+
+支持的浏览器：现代浏览器（Chrome / Safari / Firefox / 微信内置浏览器）。
+
+依赖的 dsh 接口面 —— 大版本升级后重点核对：
+
+| 接口 | 用途 |
+| --- | --- |
+| `webServer.register({ kind: 'exact', path, handler })` | 注册 `/lan-gate/status`、`/lan-gate/action`、`/lan-gate/admin` 三个路由 |
+| `webServer.tapIndex(fn)` | 往首页注入 polyfill、设备排版 CSS、右下角「内网访问」浮层 |
+| `ctx.effect(fn, label)` | 插件生命周期 |
+
+> 升级 dsh 后如果右下角按钮消失、或 `/lan-gate/status` 404，先确认这三处接口是否还在。
 
 ---
 
