@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 250" width="900" height="250" role="img" aria-label="dsh-lan-gate architecture">
+  <title>architecture</title>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#8a93a6" />
+    </marker>
+  </defs>
+  <style>
+    .box { fill: #f6faf9; stroke: #cfe0dd; stroke-width: 1.5; }
+    .gate { fill: #ecfaf7; stroke: #14b8a6; stroke-width: 1.8; }
+    .t { font: 600 16px ui-sans-serif, -apple-system, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif; fill: #1b2523; }
+    .s { font: 400 12px ui-sans-serif, -apple-system, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif; fill: #5c6b68; }
+    .m { font: 400 12px ui-monospace, SFMono-Regular, Menlo, monospace; fill: #4c5a58; }
+    .l { font: 400 12px ui-sans-serif, -apple-system, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif; fill: #6f7d7a; }
+    .a { stroke: #8a93a6; stroke-width: 1.8; fill: none; marker-end: url(#arrow); }
+  </style>
+
+  <!-- LAN devices -->
+  <rect class="box" x="24" y="72" width="200" height="106" rx="14" />
+  <text class="t" x="124" y="110" text-anchor="middle">局域网设备</text>
+  <text class="s" x="124" y="134" text-anchor="middle">手机 · 平板 · 电脑</text>
+  <text class="m" x="124" y="156" text-anchor="middle">同一 Wi-Fi</text>
+
+  <!-- arrow 1 -->
+  <line class="a" x1="232" y1="125" x2="308" y2="125" />
+  <text class="l" x="270" y="110" text-anchor="middle">HTTP</text>
+  <text class="m" x="270" y="144" text-anchor="middle">:3088</text>
+
+  <!-- gate -->
+  <rect class="gate" x="316" y="44" width="280" height="162" rx="14" />
+  <text class="t" x="456" y="82" text-anchor="middle">dsh-lan-gate</text>
+  <text class="s" x="456" y="106" text-anchor="middle">进程内反向代理 · 首页注入</text>
+  <text class="s" x="456" y="134" text-anchor="middle">门禁审批 · 设备令牌</text>
+  <text class="s" x="456" y="156" text-anchor="middle">限流 · 撤销即断开</text>
+  <text class="m" x="456" y="182" text-anchor="middle">0.0.0.0:3088</text>
+
+  <!-- arrow 2 -->
+  <line class="a" x1="604" y1="125" x2="680" y2="125" />
+  <text class="l" x="642" y="110" text-anchor="middle">HTTP</text>
+  <text class="m" x="642" y="144" text-anchor="middle">loopback</text>
+
+  <!-- dsh -->
+  <rect class="box" x="688" y="72" width="188" height="106" rx="14" />
+  <text class="t" x="782" y="110" text-anchor="middle">dsh web</text>
+  <text class="s" x="782" y="134" text-anchor="middle">DeepSeek Harness</text>
+  <text class="m" x="782" y="156" text-anchor="middle">127.0.0.1:3080</text>
+
+  <!-- approval hint -->
+  <text class="l" x="456" y="232" text-anchor="middle">首次访问由本机在「设置 → 内网访问」中批准</text>
+</svg>
