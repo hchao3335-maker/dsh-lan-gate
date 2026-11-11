@@ -235,7 +235,8 @@ cp ./lan-gate.mjs "$DSH_DIR/lan-gate/lan-gate.mjs"
 <a id="contact"></a>
 ## <img src="assets/icons/mail.svg" width="20" height="20" alt=""> 联系
 
-QQ：`[contact removed]`（请备注来意）
+本项目已归档，不再接收问题反馈。新项目相关问题请到
+[dsh-public-gate issues](https://github.com/hchao3335-maker/dsh-public-gate/issues) 提交。
 
 ---
 
